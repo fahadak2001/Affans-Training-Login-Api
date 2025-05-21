@@ -27,7 +27,7 @@ namespace LoginAPI.Controllers
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
             var username = User.Identity?.Name;
-            string cacheKey = $"expenses:{username}";
+            string cacheKey = $"user:{username}";
             byte[] cachedUsersBytes = await _distributedCache.GetAsync(cacheKey);
 
             if (cachedUsersBytes != null)
@@ -84,7 +84,7 @@ namespace LoginAPI.Controllers
             _userService.CreateUser(user);
 
 
-            string cacheKey = $"expenses:{"admin@admin.com"}";
+            string cacheKey = $"user:{"admin@admin.com"}";
             _distributedCache.RemoveAsync(cacheKey);
             return Ok(user);
         }
@@ -111,7 +111,7 @@ namespace LoginAPI.Controllers
 
             _userService.UpdateUser(existingUser);
 
-            string cacheKey = $"expenses:{"admin@admin.com"}";
+            string cacheKey = $"user:{"admin@admin.com"}";
             _distributedCache.RemoveAsync(cacheKey);
             return Ok(existingUser);
         }
@@ -128,17 +128,9 @@ namespace LoginAPI.Controllers
 
             _userService.DeleteUser(email);
 
-            string cacheKey = $"expenses:{"admin@admin.com"}";
+            string cacheKey = $"user:{"admin@admin.com"}";
             _distributedCache.RemoveAsync(cacheKey);
             return Ok();
-        }
-
-        [HttpDelete("Claims")]
-        [Authorize]
-        public IActionResult GetUserClaims()
-        {
-            var claims = User.Claims.Select(c => new { c.Type, c.Value });
-            return Ok(claims);
         }
 
         [HttpPost("Login")]

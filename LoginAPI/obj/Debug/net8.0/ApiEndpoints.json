@@ -1,16 +1,6 @@
 [
   {
     "ContainingType": "LoginAPI.Controllers.LoginController",
-    "Method": "GetUserClaims",
-    "RelativePath": "api/login/Claims",
-    "HttpMethod": "DELETE",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "LoginAPI.Controllers.LoginController",
     "Method": "CreateUser",
     "RelativePath": "api/login/Create",
     "HttpMethod": "POST",

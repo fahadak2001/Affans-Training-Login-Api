@@ -137,18 +137,6 @@
         }
       }
     },
-    "/api/login/Claims": {
-      "delete": {
-        "tags": [
-          "Login"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/login/Login": {
       "post": {
         "tags": [
