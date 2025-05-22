@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddMvc();
-//builder.Services.AddControllersWithViews();
+
 
 // Configure SQL Server
 builder.Services.AddDbContext<LoginAPIDBContext>(options =>
@@ -25,8 +25,10 @@ builder.Services.AddDistributedSqlServerCache(options =>
 });
 
 
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.Decorate<IUserService, CachedUserService>();
+
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

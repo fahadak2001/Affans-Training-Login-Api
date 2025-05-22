@@ -14,39 +14,18 @@ namespace LoginAPI.Controllers
     public class LoginController : ControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IDistributedCache _distributedCache;
-        public LoginController(IUserService userService, IDistributedCache distributedCache)
+        public LoginController(IUserService userService)
         {
             _userService = userService;
-            _distributedCache = distributedCache;
         }
 
 
         [HttpGet("List")] 
         [Authorize]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public ActionResult<IEnumerable<User>> GetUsers()
         {
-            var username = User.Identity?.Name;
-            string cacheKey = $"user:{username}";
-            byte[] cachedUsersBytes = await _distributedCache.GetAsync(cacheKey);
-
-            if (cachedUsersBytes != null)
-            {
-                var cachedUsers = JsonSerializer.Deserialize<List<User>>(Encoding.UTF8.GetString(cachedUsersBytes));
-                return Ok(cachedUsers);
-            }
-
 
             IEnumerable<User> users = _userService.GetAllUsers();
-
-            var options = new DistributedCacheEntryOptions()
-            .SetSlidingExpiration(TimeSpan.FromMinutes(5));
-
-
-            var usersJson = JsonSerializer.Serialize(users.ToList());
-            var usersBytes = Encoding.UTF8.GetBytes(usersJson);
-            await _distributedCache.SetAsync(cacheKey, usersBytes, options);
-
 
             return Ok(users.ToList());
         }
@@ -83,9 +62,6 @@ namespace LoginAPI.Controllers
 
             _userService.CreateUser(user);
 
-
-            string cacheKey = $"user:{"admin@admin.com"}";
-            _distributedCache.RemoveAsync(cacheKey);
             return Ok(user);
         }
 
@@ -111,8 +87,6 @@ namespace LoginAPI.Controllers
 
             _userService.UpdateUser(existingUser);
 
-            string cacheKey = $"user:{"admin@admin.com"}";
-            _distributedCache.RemoveAsync(cacheKey);
             return Ok(existingUser);
         }
 
@@ -128,8 +102,6 @@ namespace LoginAPI.Controllers
 
             _userService.DeleteUser(email);
 
-            string cacheKey = $"user:{"admin@admin.com"}";
-            _distributedCache.RemoveAsync(cacheKey);
             return Ok();
         }
 
