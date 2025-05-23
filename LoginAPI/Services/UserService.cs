@@ -12,7 +12,7 @@ namespace LoginAPI.Services
         private readonly IUserRepository _userRepository;
         private readonly IConfiguration _configuration;
 
-        public UserService(IUserRepository userRepository, IConfiguration configuration) 
+        public UserService(IUserRepository userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _configuration = configuration;
@@ -25,18 +25,27 @@ namespace LoginAPI.Services
             if (user == null)
             {
                 user = _userRepository.GetByUserName(email);
-                if (user == null || user.Password != password)
+                if (user == null)
                 {
                     return null;
                 }
+            }
+            if (user.Password != password)
+            {
+                return null;
             }
 
             return user;
         }
 
+
         public string GenerateJwtToken(User user)
         {
             var jwtKey = _configuration["Jwt:Key"];
+            var jwtIssuer = _configuration["Jwt:Issuer"];
+            var jwtAudience = _configuration["Jwt:Audience"];
+            var expiresInMinutes = int.Parse(_configuration["Jwt:MinutesToExpire"] ?? "60");
+
             if (string.IsNullOrEmpty(jwtKey))
             {
                 throw new InvalidOperationException("JWT key is not configured.");
@@ -52,14 +61,18 @@ namespace LoginAPI.Services
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
-            var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(60),
-                signingCredentials: credentials);
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.Now.AddMinutes(expiresInMinutes),
+                Issuer = jwtIssuer,
+                Audience = jwtAudience,
+                SigningCredentials = credentials
+            };
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
 
         public User GetUserByEmail(string email)

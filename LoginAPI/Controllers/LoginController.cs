@@ -1,10 +1,7 @@
-﻿using System.Text.Json;
-using System.Text;
-using LoginAPI.Models;
+﻿using LoginAPI.Models;
 using LoginAPI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Caching.Distributed;
 
 namespace LoginAPI.Controllers
 {
