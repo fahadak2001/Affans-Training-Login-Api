@@ -1,0 +1,112 @@
+﻿using LoginAPI.Models;
+using LoginAPI.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace LoginAPI.Controllers
+{
+    [ApiController]
+    [Route("api/login")]
+    [Produces("application/json")]
+    public class LoginController : ControllerBase
+    {
+        private readonly IUserService _userService;
+        public LoginController(IUserService userService)
+        {
+            _userService = userService;
+        }
+
+        [HttpGet("List")] 
+        [Authorize]
+        public ActionResult<IEnumerable<User>> GetUsers()
+        {
+            IEnumerable<User> users = _userService.GetAllUsers();
+
+            return Ok(users.ToList());
+        }
+
+        [HttpGet("Role")]
+        [Authorize]
+        public ActionResult<User> GetUser()
+        {
+            var email = User.Identity?.Name;
+
+            if (string.IsNullOrEmpty(email))
+            {
+                return BadRequest("Email is null or empty.");
+            }
+
+            var user = _userService.GetUserByEmail(email);
+            return Ok(user);
+        }
+
+        [HttpPost("Create")]
+        public ActionResult<User> CreateUser([FromBody] User user)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            if (_userService.UserExists(user.Email, user.UserName))
+            {
+                return BadRequest("UserName or Email already exists");
+            }
+            _userService.CreateUser(user);
+
+            return Ok(user);
+        }
+
+        [HttpPut("Update")]
+        [Authorize]
+        public IActionResult UpdateUser([FromBody] User user)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var existingUser = _userService.GetUserByEmail(user.Email);
+            if (existingUser == null)
+            {
+                return NotFound();
+            }
+            _userService.UpdateUser(user);
+
+            return Ok(user);
+        }
+
+        [HttpDelete("Delete/{email}")]
+        [Authorize]
+        public IActionResult DeleteUser(string email)
+        {
+            var userToDelete = _userService.GetUserByEmail(email);
+            if (userToDelete == null)
+            {
+                return NotFound();
+            }
+
+            _userService.DeleteUser(email);
+
+            return Ok();
+        }
+
+        [HttpPost("Login")]
+        public ActionResult<object> LoginUser([FromBody] LoginModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = _userService.Authenticate(model.UserName, model.Password);
+
+            if (user != null)
+            {
+                var token = _userService.GenerateJwtToken(user);
+                return Ok(new { Token = token });
+            }
+
+            return Unauthorized(new { Message = "UserName or Password Incorrect" });
+        }
+    }
+}
