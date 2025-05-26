@@ -16,16 +16,15 @@ namespace LoginAPI.Controllers
             _userService = userService;
         }
 
-
         [HttpGet("List")] 
         [Authorize]
         public ActionResult<IEnumerable<User>> GetUsers()
         {
-
             IEnumerable<User> users = _userService.GetAllUsers();
 
             return Ok(users.ToList());
         }
+
         [HttpGet("Role")]
         [Authorize]
         public ActionResult<User> GetUser()
@@ -48,20 +47,14 @@ namespace LoginAPI.Controllers
             {
                 return BadRequest(ModelState);
             }
-            IEnumerable<User> users = _userService.GetAllUsers();
-            foreach (var u in users)
+            if (_userService.UserExists(user.Email, user.UserName))
             {
-                if ( (u.Email == user.Email) || (u.UserName == user.UserName))
-                {
-                    return BadRequest("UserName or Email already exists");
-                }
+                return BadRequest("UserName or Email already exists");
             }
-
             _userService.CreateUser(user);
 
             return Ok(user);
         }
-
 
         [HttpPut("Update")]
         [Authorize]
@@ -77,14 +70,9 @@ namespace LoginAPI.Controllers
             {
                 return NotFound();
             }
+            _userService.UpdateUser(user);
 
-            existingUser.Email = user.Email;
-            existingUser.UserName = user.UserName;
-            existingUser.Password = user.Password;
-
-            _userService.UpdateUser(existingUser);
-
-            return Ok(existingUser);
+            return Ok(user);
         }
 
         [HttpDelete("Delete/{email}")]

@@ -5,7 +5,6 @@ namespace LoginAPI.Services
     public interface IUserService
     {
         User GetUserByEmail(string email);
-
         User GetUserByUserName(string username);
         IEnumerable<User> GetAllUsers();
         void CreateUser(User user);
@@ -13,7 +12,6 @@ namespace LoginAPI.Services
         void DeleteUser(string email);
         User Authenticate(string username, string password);
         string GenerateJwtToken(User user);
-
-
+        bool UserExists(string email, string userName);
     }
 }

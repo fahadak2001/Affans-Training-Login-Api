@@ -1,5 +1,6 @@
 ﻿using LoginAPI.Data;
 using LoginAPI.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace LoginAPI.Repositories
 {
@@ -28,6 +29,16 @@ namespace LoginAPI.Repositories
 
         public void Create(User user)
         {
+            bool check = false;
+            if (_dbContext.User.Any(u => u.Role == "Admin"))
+            {
+                check = true;
+                user.Role = "User";
+            }
+            if (check == false)
+            {
+                user.Role = "Admin";
+            }
             _dbContext.User.Add(user);
             _dbContext.SaveChanges();
         }
@@ -44,6 +55,11 @@ namespace LoginAPI.Repositories
 
             _dbContext.User.Remove(userToDelete);
             _dbContext.SaveChanges();
+        }
+
+        public bool UserExists(string email, string userName)
+        {
+            return _dbContext.User.Any(u => u.Email == email || u.UserName == userName);
         }
     }
 }

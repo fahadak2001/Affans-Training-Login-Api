@@ -38,7 +38,6 @@ namespace LoginAPI.Services
             {
                 return JsonSerializer.Deserialize<List<User>>(Encoding.UTF8.GetString(cachedUsersBytes));
             }
-
             IEnumerable<User> users = _decoratedUserService.GetAllUsers();
             if (users != null)
             {
@@ -54,10 +53,6 @@ namespace LoginAPI.Services
             _decoratedUserService.CreateUser(user);
 
             _distributedCache.Remove($"users:all");
-            _distributedCache.Remove($"user:email:{user.Email}");
-            _distributedCache.Remove($"user:username:{user.UserName}");
-
-            _distributedCache.Remove($"user:admin@admin.com");
         }
 
         public void UpdateUser(User user)
@@ -67,8 +62,6 @@ namespace LoginAPI.Services
             _distributedCache.Remove($"users:all");
             _distributedCache.Remove($"user:email:{user.Email}");
             _distributedCache.Remove($"user:username:{user.UserName}");
-
-            _distributedCache.Remove($"user:admin@admin.com");
         }
 
         public void DeleteUser(string email)
@@ -77,8 +70,6 @@ namespace LoginAPI.Services
 
             _distributedCache.Remove($"users:all");
             _distributedCache.Remove($"user:email:{email}");
-
-            _distributedCache.Remove($"user:admin@admin.com");
         }
 
         public User Authenticate(string username, string password)
@@ -89,6 +80,11 @@ namespace LoginAPI.Services
         public string GenerateJwtToken(User user)
         {
             return _decoratedUserService.GenerateJwtToken(user);
+        }
+
+        public bool UserExists(string email, string userName)
+        {
+            return _decoratedUserService.UserExists(email, userName);
         }
     }
 }

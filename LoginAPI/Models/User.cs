@@ -12,7 +12,6 @@ namespace LoginAPI.Models
 
         [Required(ErrorMessage = "Value is required.")]
         public string Password { get; set; }
-
         public string? Role { get; set; }
     }
 }

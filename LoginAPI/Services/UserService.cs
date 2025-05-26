@@ -21,7 +21,6 @@ namespace LoginAPI.Services
         public User Authenticate(string email, string password)
         {
             var user = _userRepository.GetByEmail(email);
-
             if (user == null)
             {
                 user = _userRepository.GetByUserName(email);
@@ -34,10 +33,8 @@ namespace LoginAPI.Services
             {
                 return null;
             }
-
             return user;
         }
-
 
         public string GenerateJwtToken(User user)
         {
@@ -92,21 +89,6 @@ namespace LoginAPI.Services
 
         public void CreateUser(User user)
         {
-            bool check = false;
-            IEnumerable<User> users = _userRepository.GetAll();
-            foreach (var u in users)
-            {
-                if ((u.Role == "Admin"))
-                {
-                    check = true;
-                    user.Role = "User";
-                    break;
-                }
-            }
-            if (check == false)
-            {
-                user.Role = "Admin";
-            }
             _userRepository.Create(user);
         }
 
@@ -118,6 +100,11 @@ namespace LoginAPI.Services
         public void DeleteUser(string email)
         {
             _userRepository.Delete(email);
+        }
+
+        public bool UserExists(string email, string userName)
+        {
+            return _userRepository.UserExists(email, userName);
         }
     }
 }

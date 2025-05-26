@@ -10,5 +10,6 @@ namespace LoginAPI.Repositories
         void Create(User user);
         void Update(User user);
         void Delete(string email);
+        bool UserExists(string email, string userName);
     }
 }

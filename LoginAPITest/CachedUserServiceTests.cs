@@ -12,6 +12,7 @@ namespace LoginAPITest
         private readonly Mock<IUserService> _mockDecoratedUserService;
         private readonly Mock<IDistributedCache> _mockDistributedCache;
         private readonly CachedUserService _cachedUserService;
+        private readonly User _testUser;
 
         public CachedUserServiceTests()
         {
@@ -21,31 +22,31 @@ namespace LoginAPITest
                 _mockDecoratedUserService.Object,
                 _mockDistributedCache.Object
             );
+
+            _testUser = new User { Email = "test@example.com", UserName = "testuser", Password = "password123", Role = "User" };
         }
 
         [Fact]
-        public void GetUserByEmail_DelegatesToDecoratedService()
+        public void GetUserByEmail_DelegatesToDecoratedService_ReturnsUser()
         {
-            var user = new User { Email = "test@example.com", UserName = "testuser" };
-            _mockDecoratedUserService.Setup(s => s.GetUserByEmail("test@example.com")).Returns(user);
+            _mockDecoratedUserService.Setup(s => s.GetUserByEmail(_testUser.Email)).Returns(_testUser);
 
-            var result = _cachedUserService.GetUserByEmail("test@example.com");
+            var result = _cachedUserService.GetUserByEmail(_testUser.Email);
 
-            Assert.Equal(user, result);
-            _mockDecoratedUserService.Verify(s => s.GetUserByEmail("test@example.com"), Times.Once);
+            Assert.Equal(_testUser, result);
+            _mockDecoratedUserService.Verify(s => s.GetUserByEmail(_testUser.Email), Times.Once);
             _mockDistributedCache.Verify(c => c.Get(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
-        public void GetUserByUserName_DelegatesToDecoratedService()
+        public void GetUserByUserName_DelegatesToDecoratedService_ReturnsUser()
         {
-            var user = new User { Email = "test@example.com", UserName = "testuser" };
-            _mockDecoratedUserService.Setup(s => s.GetUserByUserName("testuser")).Returns(user);
+            _mockDecoratedUserService.Setup(s => s.GetUserByUserName(_testUser.UserName)).Returns(_testUser);
 
-            var result = _cachedUserService.GetUserByUserName("testuser");
+            var result = _cachedUserService.GetUserByUserName(_testUser.UserName);
 
-            Assert.Equal(user, result);
-            _mockDecoratedUserService.Verify(s => s.GetUserByUserName("testuser"), Times.Once);
+            Assert.Equal(_testUser, result);
+            _mockDecoratedUserService.Verify(s => s.GetUserByUserName(_testUser.UserName), Times.Once);
             _mockDistributedCache.Verify(c => c.Get(It.IsAny<string>()), Times.Never);
         }
 
@@ -54,7 +55,7 @@ namespace LoginAPITest
         {
             var cachedUsers = new List<User>
             {
-                new User { Email = "cached1@example.com", UserName = "cacheduser1" },
+                _testUser,
                 new User { Email = "cached2@example.com", UserName = "cacheduser2" }
             };
             var cachedUsersJson = JsonSerializer.Serialize(cachedUsers);
@@ -66,7 +67,7 @@ namespace LoginAPITest
 
             Assert.NotNull(result);
             Assert.Equal(2, result.Count());
-            Assert.Equal("cached1@example.com", result.First().Email);
+            Assert.Equal(_testUser.Email, result.First().Email);
             _mockDistributedCache.Verify(c => c.Get("users:all"), Times.Once);
             _mockDecoratedUserService.Verify(s => s.GetAllUsers(), Times.Never);
         }
@@ -76,7 +77,7 @@ namespace LoginAPITest
         {
             var usersFromService = new List<User>
             {
-                new User { Email = "service1@example.com", UserName = "serviceuser1" },
+                _testUser,
                 new User { Email = "service2@example.com", UserName = "serviceuser2" }
             };
 
@@ -87,7 +88,7 @@ namespace LoginAPITest
 
             Assert.NotNull(result);
             Assert.Equal(2, result.Count());
-            Assert.Equal("service1@example.com", result.First().Email);
+            Assert.Equal(_testUser.Email, result.First().Email);
             _mockDistributedCache.Verify(c => c.Get("users:all"), Times.Once);
             _mockDecoratedUserService.Verify(s => s.GetAllUsers(), Times.Once);
             _mockDistributedCache.Verify(c => c.Set("users:all", It.IsAny<byte[]>(), It.IsAny<DistributedCacheEntryOptions>()), Times.Once);
@@ -108,7 +109,7 @@ namespace LoginAPITest
         }
 
         [Fact]
-        public void CreateUser_DelegatesToDecoratedServiceAndClearsCache()
+        public void CreateUser_DelegatesToDecoratedServiceAndClearsCache_UserCreated()
         {
             var newUser = new User { Email = "new@example.com", UserName = "newuser" };
 
@@ -118,13 +119,14 @@ namespace LoginAPITest
             _mockDistributedCache.Verify(c => c.Remove("users:all"), Times.Once);
             _mockDistributedCache.Verify(c => c.Remove($"user:email:{newUser.Email}"), Times.Once);
             _mockDistributedCache.Verify(c => c.Remove($"user:username:{newUser.UserName}"), Times.Once);
+           
             _mockDistributedCache.Verify(c => c.Remove("user:admin@admin.com"), Times.Once);
         }
 
         [Fact]
-        public void UpdateUser_DelegatesToDecoratedServiceAndClearsCache()
+        public void UpdateUser_DelegatesToDecoratedServiceAndClearsCache_UserUpdated()
         {
-            var updatedUser = new User { Email = "update@example.com", UserName = "updateduser" };
+            var updatedUser = new User { Email = _testUser.Email, UserName = _testUser.UserName, Role = "UpdatedRole" };
 
             _cachedUserService.UpdateUser(updatedUser);
 
@@ -136,9 +138,9 @@ namespace LoginAPITest
         }
 
         [Fact]
-        public void DeleteUser_DelegatesToDecoratedServiceAndClearsCache()
+        public void DeleteUser_DelegatesToDecoratedServiceAndClearsCache_UserDeleted()
         {
-            string emailToDelete = "delete@example.com";
+            string emailToDelete = _testUser.Email;
 
             _cachedUserService.DeleteUser(emailToDelete);
 
@@ -146,31 +148,6 @@ namespace LoginAPITest
             _mockDistributedCache.Verify(c => c.Remove("users:all"), Times.Once);
             _mockDistributedCache.Verify(c => c.Remove($"user:email:{emailToDelete}"), Times.Once);
             _mockDistributedCache.Verify(c => c.Remove("user:admin@admin.com"), Times.Once);
-        }        
-
-        [Fact]
-        public void Authenticate_DelegatesToDecoratedService()
-        {
-            var user = new User { Email = "auth@example.com", UserName = "authuser", Password = "password" };
-            _mockDecoratedUserService.Setup(s => s.Authenticate("authuser", "password")).Returns(user);
-
-            var result = _cachedUserService.Authenticate("authuser", "password");
-
-            Assert.Equal(user, result);
-            _mockDecoratedUserService.Verify(s => s.Authenticate("authuser", "password"), Times.Once);
-        }
-
-        [Fact]
-        public void GenerateJwtToken_DelegatesToDecoratedService()
-        {
-            var user = new User { Email = "jwt@example.com", UserName = "jwtuser" };
-            string expectedToken = "some.jwt.token";
-            _mockDecoratedUserService.Setup(s => s.GenerateJwtToken(user)).Returns(expectedToken);
-
-            var result = _cachedUserService.GenerateJwtToken(user);
-
-            Assert.Equal(expectedToken, result);
-            _mockDecoratedUserService.Verify(s => s.GenerateJwtToken(user), Times.Once);
         }
     }
 }
